@@ -23,10 +23,9 @@
 //#define VERBOSE_ON_ADC
 #define VERBOSE_ON_INIT
 #define VERBOSE_ON_ERROR
-#define VERBOSE_ON_RELAY
 
-//#define PROA
-#define POPA
+#define PROA
+//#define POPA
 
 #define CAN_SIGNATURE_MDE20_PROA        80
 #define CAN_SIGNATURE_MDE20_POPA        81
@@ -43,7 +42,7 @@
 
 // MODULES ACTIVATION
 #define USART_ON
-#define CAN_ON
+//#define CAN_ON
 //#define CAN_DEPENDENT
 #define ADC_ON
 #define MACHINE_ON
@@ -72,8 +71,8 @@
 // note that changing ADC_FREQUENCY may cause problems with avg_sum_samples
 #define ADC_FREQUENCY                       1000 // 20000
 #define ADC_TIMER_PRESCALER                 64
-#define ADC_AVG_SIZE_10                     128
-#define ADC_AVG_SIZE_2                      7
+#define ADC_AVG_SIZE_10                     1024
+#define ADC_AVG_SIZE_2                      10
 
 //#define FAKE_ADC_ON
 #ifdef FAKE_ADC_ON
@@ -122,11 +121,11 @@
 #define     clr_buzzer()            
 #endif
 
-#ifdef CAN_ON
-#define SPI_ON
 #define CAN_APP_SEND_STATE_FREQ     40//36000     //<! state msg frequency in Hz
 #define CAN_APP_SEND_POT_FREQ     4//36000     //<! motor msg frequency in Hz
 
+#ifdef CAN_ON
+#define SPI_ON
 
 // CANBUS DEFINITONS
 // ----------------------------------------------------------------------------
