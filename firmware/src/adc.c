@@ -59,7 +59,7 @@ ISR(ADC_vect)
 
         #ifdef VERBOSE_ON_ADC
         VERBOSE_MSG_ADC( usart_send_string("adc:") );
-        VERBOSE_MSG_ADC( usart_send_uint16(adc.select) );
+        VERBOSE_MSG_ADC( usart_send_char(adc.select + '0') );
         VERBOSE_MSG_ADC( usart_send_char(':') );
         VERBOSE_MSG_ADC( usart_send_uint16(adc.channel[adc.select].avg) );
         VERBOSE_MSG_ADC( usart_send_char('\n') );

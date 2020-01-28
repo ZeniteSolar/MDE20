@@ -168,22 +168,16 @@ inline void task_idle(void)
     set_state_running();
 }
 
-inline void read_potentiometer(void)
-{
-
-}
-
 /**
  * @brief running task checks the system and apply the control action to pwm.
  */
 inline void task_running(void)
 {
-
-    read_potentiometer();
-
+#ifdef CAN_ON
     can_app_task();
+#endif
 
-    controller();
+//    controller();
 
 #ifdef LED_ON
     if(led_clk_div++ >= 2){
