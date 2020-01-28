@@ -11,8 +11,21 @@ void controller_init(void)
 
 }
 
-void controller(void)
+inline void controller(void)
+{
+#ifdef PROA
+    controller_proa();
+#else
+    controller_popa();
+#endif
+}
+
+inline void controller_proa(void)
 {
 
 }
 
+inline void controller_popa(void)
+{
+
+}
