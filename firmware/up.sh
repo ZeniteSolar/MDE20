@@ -2,6 +2,6 @@
 make clean
 rm -rf bin obj
 make all
-#fuser -k /dev/ttyACM0
-avrdude -c arduino -P /dev/ttyACM0 -p m328p -D -U flash:w:bin/Firmware.elf
-figlet "MIC19"
+#fuser -k /dev/ttyUSB0
+avrdude -c arduino -P /dev/ttyUSB0 -p m328p -D -U flash:w:bin/firmware.elf
+figlet "MDE20"
