@@ -118,11 +118,6 @@ ISR(ADC_vect)
         VERBOSE_MSG_ADC( usart_send_char('\n') );
         #endif
     }
-    if(++adc.select > ADC_LAST_CHANNEL){
-        adc.select = ADC0;             // recycles
-    }
-    
-        adc_select_channel(adc.select);                           
     
 }
  

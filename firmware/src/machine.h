@@ -14,6 +14,7 @@
 #include <avr/wdt.h>
 #include <avr/interrupt.h>
 #include <util/delay.h>
+#include "controller.h"
 
 #include "conf.h"
 
@@ -44,27 +45,9 @@ typedef enum state_machine{
 
 typedef union system_flags{
     struct{
-        uint8_t     boat_on                :1;
-        uint8_t     boat_switch_on         :1;
-        uint8_t     MCS_on                 :1;
-        uint8_t     motor_on               :1;
-        uint8_t     MCC_on                 :1;
-        uint8_t     dead_men_switch        :1;
-        uint8_t     emergency              :1;
     };
     uint8_t   all__;
 } system_flags_t;
-
-
-typedef union pump_flags{
-    struct{
-        uint8_t     pump1_on               :1;
-        uint8_t     pump2_on               :1;
-        uint8_t     pump3_on               :1;
-    };
-    uint8_t   all__;
-}pump_flags_t;
-
 
 typedef union error_flags{
     struct{
@@ -73,24 +56,17 @@ typedef union error_flags{
     uint8_t   all;
 }error_flags_t;
 
-typedef struct{
-    uint32_t sum;
-    uint16_t avg;
-    uint32_t samples;
-} sub_control_t;
-
 typedef struct control
 {
-    sub_control_t motor_PWM_target;
-    sub_control_t motor_RAMP_target;
-    sub_control_t MCC_POWER_target;
+    uint8_t dt_A;
+    uint8_t dt_B;
+    uint8_t pot;
 }control_t;
 control_t control;
 
-
+void read_potentiometer(void);
 
 // machine checks
-void check_buffers(void);
 void reset_measurements(void);
 void average_measurements(void);
 
@@ -119,32 +95,22 @@ void set_state_reset(void);
 void set_state_waiting_reset(void);
 
 //input functions
-void read_switches(void);
 void read_potentiometers(void);
-void read_boat_on(void);
-void read_pump_switches(void);
-void reset_switches(void);
-void acumulate_potentiometers(void);
-void average_potentiometers(void);
 
 void buzzer(uint8_t buzzer_frequency, uint8_t buzzer_rhythm_on, uint8_t buzzer_rhythm_off);
 
 // machine variables
 volatile state_machine_t state_machine;
-volatile pump_flags_t pump_flags;
 volatile system_flags_t system_flags;
 volatile error_flags_t error_flags;
+volatile control_t coltrol;
 volatile uint16_t charge_count_error;
-volatile uint8_t relay_clk;
-volatile uint8_t first_boat_off;
 volatile uint8_t machine_clk;
 volatile uint8_t machine_clk_divider;
 volatile uint8_t total_errors;           // Contagem de ERROS
-volatile uint16_t charge_count_error;
 volatile uint8_t reset_clk;
-
-// other variables
 volatile uint8_t led_clk_div;
+volatile uint8_t can_app_checks_without_mde20_msg;
 
 // ISRs
 ISR(TIMER2_COMPA_vect);

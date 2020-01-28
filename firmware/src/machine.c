@@ -141,7 +141,6 @@ inline void task_initializing(void)
     set_led(LED1);
 #endif
 
-
     set_machine_initial_state();
 
     VERBOSE_MSG_INIT(usart_send_string("System initialized without errors.\n"));
@@ -166,23 +165,13 @@ inline void task_idle(void)
 
 #endif
 
-    reset_switches();
-
-    read_boat_on();
-
-    read_pump_switches();
-
-
-#ifdef CHECK_MCS_ON
-    if(system_flags.MCS_on && system_flags.boat_on)
-        set_state_running();
-#else    
-    if(system_flags.boat_on)
-        set_state_running();
-#endif
-
+    set_state_running();
 }
 
+inline void read_potentiometer(void)
+{
+
+}
 
 /**
  * @brief running task checks the system and apply the control action to pwm.
@@ -190,13 +179,11 @@ inline void task_idle(void)
 inline void task_running(void)
 {
 
-    read_boat_on();
+    read_potentiometer();
 
-    read_switches();
+    can_app_task();
 
-    read_pump_switches();
-
-    acumulate_potentiometers();    
+    controller();
 
 #ifdef LED_ON
     if(led_clk_div++ >= 2){
@@ -208,11 +195,7 @@ inline void task_running(void)
     buzzer(2,2,64);
 #endif
 
-    if(!system_flags.boat_on)
-        set_state_idle();
-
 }
-
 
 inline void buzzer(uint8_t buzzer_frequency, uint8_t buzzer_rhythm_on, uint8_t buzzer_rhythm_off)
 {
@@ -248,185 +231,6 @@ inline void buzzer(uint8_t buzzer_frequency, uint8_t buzzer_rhythm_on, uint8_t b
 
 
 }
-
-
-
-inline void acumulate_potentiometers(void)
-{
-
-    if(control.motor_PWM_target.samples <= ADC_AVG_VARIABLE_OVERFLOW_PROTECTION){     //variable overflow protection (2^32)/255 = 16843009
-    control.motor_PWM_target.sum += adc.channel[MOTOR_PWM_POT].avg;
-    control.motor_PWM_target.samples ++;
-    }
-    else    VERBOSE_MSG_MACHINE(usart_send_string("ADC_AVG_VARIABLE_OVERFLOW_PROTECTION"));
-
-    if(control.motor_RAMP_target.samples <= ADC_AVG_VARIABLE_OVERFLOW_PROTECTION){     //variable overflow protection (2^32)/255 = 16843009
-    control.motor_RAMP_target.sum += adc.channel[MOTOR_RAMP_POT].avg;
-    control.motor_RAMP_target.samples ++;
-    }
-    else    VERBOSE_MSG_MACHINE(usart_send_string("ADC_AVG_VARIABLE_OVERFLOW_PROTECTION"));
-
-    if(control.MCC_POWER_target.samples <= ADC_AVG_VARIABLE_OVERFLOW_PROTECTION){     //variable overflow protection (2^32)/255 = 16843009
-    control.MCC_POWER_target.sum += adc.channel[MCC_POWER_POT].avg;
-    control.MCC_POWER_target.samples ++;
-    }
-    else    VERBOSE_MSG_MACHINE(usart_send_string("ADC_AVG_VARIABLE_OVERFLOW_PROTECTION"));
-}
-
-inline void average_potentiometers(void)
-{
-    control.motor_PWM_target.avg = 
-    control.motor_PWM_target.sum / control.motor_PWM_target.samples;
-    control.motor_PWM_target.sum = control.motor_PWM_target.samples = 0;
-
-    control.motor_RAMP_target.avg = 
-    control.motor_RAMP_target.sum / control.motor_RAMP_target.samples;
-    control.motor_RAMP_target.sum = control.motor_RAMP_target.samples = 0;
-
-    control.MCC_POWER_target.avg = 
-    control.MCC_POWER_target.sum / control.MCC_POWER_target.samples;
-    control.MCC_POWER_target.sum = control.MCC_POWER_target.samples = 0;
-
-
-}
-
-inline void read_boat_on(void)
-{
-    enum{ON,OFF};
-    static uint8_t count_boat_state[2] = {0,0};
-    static uint8_t count_emergency_state[2] = {0,0};
-
-    //BOAT SWITCH
-    if (!tst_bit(CTRL_SWITCHES_PIN,BOAT_ON_SWITCH)){
-        if (++count_boat_state[ON] >= BOAT_ON_TO_UPDATE){
-            count_boat_state[OFF] = 0;
-            system_flags.boat_switch_on = 1;
-        }
-    }
-    else{
-        if (++count_boat_state[OFF] >= BOAT_ON_TO_UPDATE){
-            count_boat_state[ON] = 0;
-            system_flags.boat_switch_on = 0;
-        }
-    }
-    //END OF BOAT SWITCH
-
-        //EMERGENCY SWITCH
-    if (!tst_bit(CTRL_SWITCHES_PIN,EMERGENCY_SWITCH)){
-        if (++count_emergency_state[ON] >= EMERGENCY_ON_TO_UPDATE){
-            count_emergency_state[OFF] = 0;
-            system_flags.emergency = 1;
-        }
-    }
-    else{
-        if (++count_emergency_state[OFF] >= EMERGENCY_ON_TO_UPDATE){
-            count_emergency_state[ON] = 0;
-            system_flags.emergency = 0;
-        }
-    }
-    //END OF EMERGENCY SWITCH
-
-    if(system_flags.boat_switch_on && system_flags.emergency)
-        system_flags.boat_on = 1;
-    else
-        system_flags.boat_on = 0;
-
-
-}
-
-inline void reset_switches(void)
-{
-    system_flags.motor_on = 0;
-    system_flags.dead_men_switch = 0;
-    system_flags.MCC_on = 0;
-    system_flags.emergency = 0;
-}
-
-
-inline void read_pump_switches(void)
-{
-
-    if (tst_bit(PUMPS_SWITCHES_PIN, PUMP1_ON_SWITCH))
-        pump_flags.pump1_on = 0;
-    else
-        pump_flags.pump1_on = 1;
-
-    if (tst_bit(PUMPS_SWITCHES_PIN, PUMP2_ON_SWITCH))
-        pump_flags.pump2_on = 0;
-    else
-        pump_flags.pump2_on = 1;
-
-    if (tst_bit(PUMPS_SWITCHES_PIN, PUMP3_ON_SWITCH))
-        pump_flags.pump3_on = 0;
-    else
-        pump_flags.pump3_on = 1;
-
-}
-
-inline void read_switches(void)
-{
-    enum {ON,OFF};
-    static uint8_t clk_div_switch_msg = 0;
-    static uint8_t count_motor_state[2] = {0,0};
-    static uint8_t count_DMS_state[2] = {0,0};
-    
-    
-
-
-    //TEST DIGITAL PINS AND FILTER THEM
-
-    //MOTOR SWITCH
-    if (!tst_bit(CTRL_SWITCHES_PIN,MOTOR_ON_SWITCH)){
-        if (++count_motor_state[ON] >= MOTOR_ON_TO_UPDATE){
-            count_motor_state[OFF] = 0;
-            system_flags.motor_on = 1;
-        }
-    }
-    else{
-        if (++count_motor_state[OFF] >= MOTOR_ON_TO_UPDATE){
-            count_motor_state[ON] = 0;
-            system_flags.motor_on = 0;
-        }
-    }
-    //END OF MOTOR SWITCH
-
-    //TEST DIGITAL PINS AND FILTER THEM
-
-
-
-    //DEAD MEN SWITCH
-    if (tst_bit(DMS_PIN,DMS)){
-        if (++count_DMS_state[ON] >= DEAD_MEN_TO_UPDATE){
-            count_DMS_state[OFF] = 0;
-            system_flags.dead_men_switch = 1;
-        }
-    }   
-    else{
-        if (++count_DMS_state[OFF] >= DEAD_MEN_TO_UPDATE){
-            count_DMS_state[ON] = 0;
-            system_flags.dead_men_switch = 0;
-        }
-    }
-    //END OF DEAD MEN SWITCH
-
-    if (!tst_bit(CTRL_SWITCHES_PIN, MCC_ON_SWITCH))
-        system_flags.MCC_on = 1;
-    else
-        system_flags.MCC_on = 0;
-
-
-    if (++clk_div_switch_msg >= 10)
-    {
-        clk_div_switch_msg = 0;
-    VERBOSE_MSG_MACHINE(usart_send_string("reading switches:... \n"));
-    VERBOSE_MSG_MACHINE(usart_send_string("system_flags:"));
-    VERBOSE_MSG_MACHINE(usart_send_uint16(system_flags.all__));
-    VERBOSE_MSG_MACHINE(usart_send_string("OK! \n"));
-    }
-
-}
-
-
 
 /**
  * @brief error task checks the system and tries to medicine it.
@@ -470,10 +274,7 @@ inline void task_error(void)
     cpl_led(LED1);
 #endif
 
-
-
 }
-
                     
 /**
  * @brief reset error task just freezes the processor and waits for watchdog
@@ -525,13 +326,11 @@ inline void machine_run(void)
 {
     //print_infos();
     
-
     if(machine_clk){
         machine_clk = 0;
     #ifdef ADC_ON
         if(adc.ready){
             adc.ready = 0;
-
 
             if(error_flags.all){
                 print_system_flags();
@@ -539,8 +338,6 @@ inline void machine_run(void)
                 print_infos();
                 set_state_error();
             }
-
-
 
             switch(state_machine){
                 case STATE_INITIALIZING:
@@ -579,7 +376,7 @@ inline void machine_run(void)
 ISR(TIMER2_COMPA_vect)
 {
     if(machine_clk_divider++ == MACHINE_CLK_DIVIDER_VALUE){
-        /*if(machine_clk){
+            /*if(machine_clk){
             for(;;){
                 pwm_reset();
                 VERBOSE_MSG_ERROR(if(machine_clk) usart_send_string("\nERROR: CLOCK CONFLICT!!!\n"));

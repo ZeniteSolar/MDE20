@@ -25,20 +25,33 @@
 #define VERBOSE_ON_ERROR
 #define VERBOSE_ON_RELAY
 
-#define CAN_SIGNATURE_SELF              CAN_SIGNATURE_MIC19
+//#define PROA
+#define POPA
+
+#define CAN_SIGNATURE_MDE20_PROA        80
+#define CAN_SIGNATURE_MDE20_POPA        81
+#define CAN_MSG_MDE20_CONTROL_POT_BYTE  2
+#define CAN_MSG_MDE20_CONTROL_ID        82
+
+#ifdef PROA
+#define CAN_SIGNATURE_SELF              CAN_SIGNATURE_MDE20_PROA
+#endif
+#ifdef POPA
+#define CAN_SIGNATURE_SELF              CAN_SIGNATURE_MDE20_POPA
+#endif
 
 
 // MODULES ACTIVATION
 #define USART_ON
 #define CAN_ON
-#define CAN_DEPENDENT
+//#define CAN_DEPENDENT
 #define ADC_ON
 #define MACHINE_ON
 #define LED_ON
-#define BUZZER_ON
+//#define BUZZER_ON
 #define WATCHDOG_ON
-#define SLEEP_ON	
-#define CHECK_MCS_ON
+//#define SLEEP_ON	
+//#define CHECK_MCS_ON
 
 //PINS UPDATE FILTER CONFIGURATION
 #define BOAT_ON_TO_UPDATE 10
@@ -46,23 +59,21 @@
 #define DEAD_MEN_TO_UPDATE 10
 #define EMERGENCY_ON_TO_UPDATE 10
 
-
+#ifdef POPA
+#define PWM_A           PD6
+#define PWM_B           PD5
+#define PWM_PORT        PORTD
+#define PWM_DDR         DDRD
+#endif
 
 #ifdef ADC_ON
 #define ADC_8BITS
 // ADC CONFIGURATION
 // note that changing ADC_FREQUENCY may cause problems with avg_sum_samples
-#define ADC_FREQUENCY                       10000 // 20000
-#define ADC_TIMER_PRESCALER                 8
-#define ADC_AVG_SIZE_2                      7                  // in base 2
-#define ADC_AVG_SIZE_10                     128                // in base 10
-
-#define ADC_AVG_VARIABLE_OVERFLOW_PROTECTION 4294967296/255 //32bit variable/8bit variable(maximum value of adc)
-
-#define POTENTIOMETER_LOW_TRIGGER 15
-#define POTENTIOMETER_HIGH_TRIGGER 240
-
-
+#define ADC_FREQUENCY                       1000 // 20000
+#define ADC_TIMER_PRESCALER                 64
+#define ADC_AVG_SIZE_10                     128
+#define ADC_AVG_SIZE_2                      7
 
 //#define FAKE_ADC_ON
 #ifdef FAKE_ADC_ON
@@ -79,46 +90,9 @@
 #define MACHINE_CLK_DIVIDER_VALUE           ((uint64_t)(uint32_t)MACHINE_TIMER_FREQUENCY*(uint32_t)ADC_AVG_SIZE_10)/(ADC_FREQUENCY)           //<! machine_run clock divider
 #define MACHINE_FREQUENCY                   (MACHINE_TIMER_FREQUENCY)/(MACHINE_CLK_DIVIDER_VALUE)
 
-// SCALE TO CONVERT ADC DEFINITIONS
-#define VSCALE                              (uint16_t)1000
-
 #endif // MACHINE_ON
 
-// INPUT PINS DEFINITIONS
-/*EXAMPLE OF INPUT PIN DEFINITONS
-#define     CHARGERELAY_PORT        PORTC
-#define     CHARGERELAY_PIN         PINC
-#define     CHARGERELAY_DDR         DDRC
-
-#define     CHARGERELAY             PC2
-#define     set_chargerelay()       set_bit(CHARGERELAY_PORT, CHARGERELAY)
-#define     clr_chargerelay()       clr_bit(CHARGERELAY_PORT, CHARGERELAY)
-*/
-
-
-#define     PUMPS_SWITCHES_PORT     PORTC
-#define     PUMPS_SWITCHES_PIN      PINC
-#define     PUMPS_SWITCHES_DDR      DDRC
-#define     PUMP1_ON_SWITCH         PC3
-#define     PUMP2_ON_SWITCH         PC4
-#define     PUMP3_ON_SWITCH         PC5
-
-#define     DMS_PORT                PORTD
-#define     DMS_PIN                 PIND
-#define     DMS_DDR                 DDRD
-#define     DMS                     PD6
-
-#define     CTRL_SWITCHES_PORT      PORTD
-#define     CTRL_SWITCHES_PIN       PIND
-#define     CTRL_SWITCHES_DDR       DDRD
-#define     EMERGENCY_SWITCH   	    PD7
-#define     BOAT_ON_SWITCH          PD5
-#define     MOTOR_ON_SWITCH         PD3
-#define     MCC_ON_SWITCH           PD2
-
-#define 	MOTOR_PWM_POT			ADC0
-#define  	MOTOR_RAMP_POT			ADC1
-#define 	MCC_POWER_POT			ADC2
+#define 	POT			            ADC0
 
 #ifdef LED_ON
 #define     LED_PORT                PORTD
@@ -134,23 +108,24 @@
 #define     clr_led()               
 #endif // LED_ON
 
-#ifdef BUZZER_ON
 #define     BUZZER_PORT             PORTD
 #define     BUZZER_PIN              PIND
 #define     BUZZER_DDR              DDRD
 #define     BUZZER                  PD4
+#ifdef BUZZER_ON
 #define     cpl_buzzer()            cpl_bit(BUZZER_PORT, BUZZER)
 #define     set_buzzer()            set_bit(BUZZER_PORT, BUZZER)
 #define     clr_buzzer()            clr_bit(BUZZER_PORT, BUZZER)
+#else
+#define     cpl_buzzer()            
+#define     set_buzzer()            
+#define     clr_buzzer()            
 #endif
 
 #ifdef CAN_ON
 #define SPI_ON
 #define CAN_APP_SEND_STATE_FREQ     40//36000     //<! state msg frequency in Hz
-#define CAN_APP_SEND_MOTOR_FREQ     0//36000     //<! motor msg frequency in Hz
-#define CAN_APP_SEND_BOAT_FREQ      0//36000     //<! motor msg frequency in Hz
-#define CAN_APP_SEND_PUMPS_FREQ     4//36000     //<! motor msg frequency in Hz
-
+#define CAN_APP_SEND_POT_FREQ     4//36000     //<! motor msg frequency in Hz
 
 
 // CANBUS DEFINITONS

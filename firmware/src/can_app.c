@@ -32,37 +32,13 @@ inline void can_app_task(void)
     check_can();
 
     if(can_app_send_state_clk_div++ >= CAN_APP_SEND_STATE_CLK_DIV){
-#ifdef USART_ON
-      //  VERBOSE_MSG_CAN_APP(usart_send_string("state msg was sent.\n"));
-#endif
         can_app_send_state();
         can_app_send_state_clk_div = 0;
     }
 
-    if(can_app_send_motor_clk_div++ >= CAN_APP_SEND_MOTOR_CLK_DIV){
-#ifdef USART_ON
-       // VERBOSE_MSG_CAN_APP(usart_send_string("motor msg was sent.\n"));
-#endif
-        can_app_send_motor();
-        can_app_send_motor_clk_div = 0;
-    }
-
-
-    if(can_app_send_boat_clk_div++ >= CAN_APP_SEND_BOAT_CLK_DIV){
-#ifdef USART_ON
-       // VERBOSE_MSG_CAN_APP(usart_send_string("boat msg was sent.\n"));
-#endif
-        can_app_send_boat();
-        can_app_send_boat_clk_div = 0;
-    }
-
-
-    if(can_app_send_pumps_clk_div++ >= CAN_APP_SEND_BOAT_CLK_DIV){
-#ifdef USART_ON
-       // VERBOSE_MSG_CAN_APP(usart_send_string("pumps msg was sent.\n"));
-#endif
-        can_app_send_pumps();
-        can_app_send_pumps_clk_div = 0;
+    if(can_app_send_pot_clk_div++ >= CAN_APP_SEND_POT_CLK_DIV){
+        can_app_send_pot();
+        can_app_send_pot_clk_div = 0;
     }
 
 }
@@ -74,194 +50,40 @@ inline void can_app_send_state(void)
     msg.length                              = CAN_MSG_GENERIC_STATE_LENGTH;
     msg.flags.rtr = 0;
 
-    msg.data[CAN_MSG_GENERIC_STATE_SIGNATURE_BYTE]            = CAN_SIGNATURE_SELF;
+    msg.data[CAN_MSG_GENERIC_STATE_SIGNATURE_BYTE]  = CAN_SIGNATURE_SELF;
     msg.data[CAN_MSG_GENERIC_STATE_STATE_BYTE]      = (uint8_t) state_machine;
     msg.data[CAN_MSG_GENERIC_STATE_ERROR_BYTE]      = error_flags.all;
 
     can_send_message(&msg);
-#ifdef VERBOSE_MSG_CAN_APP
-    //ERBOSE_MSG_CAN_APP(usart_send_string("state msg was send.\n"));
-//    VERBOSE_MSG_CAN_APP(can_app_print_msg(&msg));
-#endif
+
+    VERBOSE_MSG_CAN_APP(usart_send_string("state msg was send.\n"));
+    VERBOSE_MSG_CAN_APP(can_app_print_msg(&msg));
 }
 
-inline void can_app_send_motor(void)
+inline void can_app_send_pot(void)
 {
     can_t msg;
     msg.id                                  = CAN_MSG_MIC19_MOTOR_ID;
     msg.length                              = CAN_MSG_MIC19_MOTOR_LENGTH;
     msg.flags.rtr = 0;
 
-    average_potentiometers();
-
-    msg.data[CAN_MSG_GENERIC_STATE_SIGNATURE_BYTE]          
-
-
-          = CAN_SIGNATURE_SELF;
-    msg.data[CAN_MSG_MIC19_MOTOR_D_BYTE]    = control.motor_PWM_target.avg;
-    msg.data[CAN_MSG_MIC19_MOTOR_I_BYTE]    = control.motor_RAMP_target.avg;
-
-    msg.data[CAN_MSG_MIC19_MOTOR_MOTOR_BYTE] = 
-        ((system_flags.motor_on) << CAN_MSG_MIC19_MOTOR_MOTOR_MOTOR_ON_BIT);
-
-    msg.data[CAN_MSG_MIC19_MOTOR_MOTOR_BYTE] |= 
-        ((system_flags.dead_men_switch) << CAN_MSG_MIC19_MOTOR_MOTOR_DMS_ON_BIT);
+    msg.data[CAN_MSG_GENERIC_STATE_SIGNATURE_BYTE]  = CAN_SIGNATURE_SELF;
+    msg.data[CAN_MSG_MDE20_CONTROL_POT_BYTE]        = control.pot;
 
     can_send_message(&msg);
 
+    VERBOSE_MSG_CAN_APP(usart_send_string("pot msg was send.\n"));
+    VERBOSE_MSG_CAN_APP(can_app_print_msg(&msg));
 }
 
-inline void can_app_send_boat(void)
+inline void can_app_extractor_mde20_proa_pot(can_t *msg)
 {
-    can_t msg;
-    msg.id                                  = CAN_MSG_MIC19_MCS_ID;
-    msg.length                              = CAN_MSG_MIC19_MCS_LENGTH;
-    msg.flags.rtr = 0;
+    if(msg->data[CAN_MSG_GENERIC_STATE_SIGNATURE_BYTE] == CAN_SIGNATURE_MDE20_PROA){
+        can_app_checks_without_mde20_msg = 0;
 
-    average_potentiometers();
-
-    msg.data[CAN_MSG_GENERIC_STATE_SIGNATURE_BYTE]                = CAN_SIGNATURE_SELF;
-    if(system_flags.boat_on){
-        msg.data[CAN_MSG_MIC19_MCS_BOAT_ON_BYTE] = 0xFF; 
-    }else{
-        msg.data[CAN_MSG_MIC19_MCS_BOAT_ON_BYTE] = 0x00;
-    }
-
-
-    can_send_message(&msg);
-
-}
-
-inline void can_app_send_pumps(void)
-{
-
-    can_t msg;
-    msg.id                                  = CAN_MSG_MIC19_PUMPS_ID;
-    msg.length                              = CAN_MSG_MIC19_PUMPS_LENGTH;
-    msg.flags.rtr = 0;
-
-
-    msg.data[CAN_MSG_GENERIC_STATE_SIGNATURE_BYTE]                = CAN_SIGNATURE_SELF; 
-
-    msg.data[CAN_MSG_MIC19_PUMPS_PUMPS_BYTE] = 0x00;
-
-    msg.data[CAN_MSG_MIC19_PUMPS_PUMPS_BYTE] |=
-    (pump_flags.pump1_on) << (CAN_MSG_MIC19_PUMPS_PUMPS_PUMP1_BIT);
-
-    msg.data[CAN_MSG_MIC19_PUMPS_PUMPS_BYTE] |= 
-    (pump_flags.pump2_on) << (CAN_MSG_MIC19_PUMPS_PUMPS_PUMP2_BIT);
-
-    msg.data[CAN_MSG_MIC19_PUMPS_PUMPS_BYTE] |= 
-    (pump_flags.pump3_on) << (CAN_MSG_MIC19_PUMPS_PUMPS_PUMP3_BIT);
-
-        
-
-          
-
-        // ((pump_flags.pump1_on) << CAN_MSG_MIC19_PUMPS_PUMPS_PUMP1_BIT);
-
-    // msg.data[CAN_MSG_MIC19_PUMPS_PUMPS_BYTE] |=
-        // ((pump_flags.pump2_on) << CAN_MSG_MIC19_PUMPS_PUMPS_PUMP2_BIT);
-
-    // msg.data[CAN_MSG_MIC19_PUMPS_PUMPS_BYTE] |=
-        // ((pump_flags.pump3_on) << CAN_MSG_MIC19_PUMPS_PUMPS_PUMP3_BIT);
-
-    can_send_message(&msg);
-
-}
-
-inline void can_app_extractor_mcs_relay(can_t *msg)
-{
-    if(msg->data[CAN_MSG_GENERIC_STATE_SIGNATURE_BYTE] == CAN_SIGNATURE_MCS19){
-        
-        // can_app_checks_without_mic17_msg = 0;
-
-        if(msg->data[CAN_MSG_MCS19_START_STAGES_MAIN_RELAY_BYTE] == 0xFF){
-            system_flags.MCS_on = 1;
-        }else if(msg->data[CAN_MSG_MCS19_START_STAGES_MAIN_RELAY_BYTE] == 0x00){
-            system_flags.MCS_on = 0;
-        }
-
-
-        //system_flags.boat_on       = bit_is_set(msg->data[
-        //    CAN_MSG_MIC19_MCS_BOAT_ON_BYTE], 
-        //    CAN_MSG_MIC19_MCS_BOAT_ON_BIT);
-
-
-        //VERBOSE_MSG_CAN_APP(usart_send_string("boat on bit: "));
-        //VERBOSE_MSG_CAN_APP(usart_send_uint16(system_flags.boat_on));
-        //VERBOSE_MSG_CAN_APP(usart_send_char('\n'));
-
-
+        control.pot = msg->data[CAN_MSG_MDE20_CONTROL_POT_BYTE];
     }
 }
-
-
-/* 
-########################################################################
-EXAMPLE OF SEND adc
-########################################################################
-
-inline void can_app_send_bat(void)
-{
-    can_t msg;
-    msg.id                                  = CAN_MSG_MCS19_ADC;
-    msg.length                              = CAN_LENGTH_MSG_MCS19_ADC;
-    msg.flags.rtr = 0;
-    
-    uint16_t avg_adc0 = 
-        measurements.adc0_avg_sum / measurements.adc0_avg_sum_count;
-
-
-    msg.data[CAN_MSG_GENERIC_STATE_SIGNATURE_BYTE]            = CAN_SIGNATURE_SELF;
-    msg.data[CAN_MSG_MCS19_BAT_AVG_L_BYTE] =  LOW(avg_adc0);
-    msg.data[CAN_MSG_MCS19_BAT_AVG_H_BYTE] =  HIGH(avg_adc0);
-    msg.data[CAN_MSG_MCS19_BAT_MIN_L_BYTE]  = LOW(measurements.adc0_min);
-    msg.data[CAN_MSG_MCS19_BAT_MIN_H_BYTE]  = HIGH(measurements.adc0_min);
-    msg.data[CAN_MSG_MCS19_BAT_MAX_L_BYTE]  = LOW(measurements.adc0_max);
-    msg.data[CAN_MSG_MCS19_BAT_MAX_H_BYTE]  = HIGH(measurements.adc0_max);
-
-    can_send_message(&msg); 
-#ifdef VERBOSE_MSG_CAN_APP
-    VERBOSE_MSG_CAN_APP(usart_send_string("adc bat msg was sent.\n"));
-//    VERBOSE_MSG_CAN_APP(can_app_print_msg(&msg));
-#endif
-
-    reset_measurements();
-}
-*/
-
-
-/*
-########################################################################
-EXAMPLE OF extract mensage
-########################################################################
-inline void can_app_extractor_mic17_mcs(can_t *msg)
-{
-    if(msg->data[CAN_MSG_GENERIC_STATE_SIGNATURE_BYTE] == CAN_SIGNATURE_MIC19){
-        
-        // can_app_checks_without_mic17_msg = 0;
-
-        if(msg->data[CAN_MSG_MIC19_MCS_BOAT_ON_BYTE] == 0xFF){
-            system_flags.boat_on = 1;
-        }else if(msg->data[CAN_MSG_MIC19_MCS_BOAT_ON_BYTE] == 0x00){
-            system_flags.boat_on = 0;
-        }
-
-        //system_flags.boat_on       = bit_is_set(msg->data[
-        //    CAN_MSG_MIC19_MCS_BOAT_ON_BYTE], 
-        //    CAN_MSG_MIC19_MCS_BOAT_ON_BIT);
-
-
-        VERBOSE_MSG_CAN_APP(usart_send_string("boat on bit: "));
-        VERBOSE_MSG_CAN_APP(usart_send_uint16(system_flags.boat_on));
-        VERBOSE_MSG_CAN_APP(usart_send_char('\n'));
-
-
-    }
-}
-
-*/
 
  
 /**
@@ -270,14 +92,14 @@ inline void can_app_extractor_mic17_mcs(can_t *msg)
  */
 inline void can_app_msg_extractors_switch(can_t *msg)
 {
-    if(msg->data[CAN_MSG_GENERIC_STATE_SIGNATURE_BYTE] == CAN_SIGNATURE_MCS19){
+    if(msg->data[CAN_MSG_GENERIC_STATE_SIGNATURE_BYTE] == CAN_SIGNATURE_MDE20_PROA){
 
         switch(msg->id){
             
-            case CAN_MSG_MCS19_START_STAGES_ID:
-                VERBOSE_MSG_CAN_APP(usart_send_string("got a mcs msg: "));
+            case CAN_MSG_MDE20_CONTROL_ID:
+                VERBOSE_MSG_CAN_APP(usart_send_string("got a MDE msg: "));
                 VERBOSE_MSG_CAN_APP(can_app_print_msg(msg));
-                can_app_extractor_mcs_relay(msg);
+                can_app_extractor_mde20_proa_pot(msg);
             default:
 #ifdef USART_ON
                 VERBOSE_MSG_CAN_APP(usart_send_string("got a unknown msg:\n "));

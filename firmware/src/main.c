@@ -6,7 +6,7 @@ void init(void)
 {
 
     #ifdef USART_ON
-        usart_init(MYUBRR,1,1);                         // inicializa a usart
+        usart_init(MYUBRR,0,1);                         // inicializa a usart
         VERBOSE_MSG_INIT(usart_send_string("\n\n\nUSART... OK!\n"));
     #endif
 
@@ -106,36 +106,6 @@ void init(void)
         print_configurations();
     #endif // MACHINE_ON
 
-
-/* 
-########################################################################
-EXAMPLE OF PIN INIT
-########################################################################
-    set_bit(MAINRELAY_DDR, MAINRELAY_ON);
-    set_bit(MAINRELAY_DDR, MAINRELAY_OFF);
-    set_bit(CHARGERELAY_DDR, CHARGERELAY);
-*/
-
-    VERBOSE_MSG_INIT(usart_send_string("IOs... "));
-    clr_bit(CTRL_SWITCHES_DDR, BOAT_ON_SWITCH);     //Como entrada
-    set_bit(CTRL_SWITCHES_PORT, BOAT_ON_SWITCH);    //Ativa o pull-up
-    clr_bit(CTRL_SWITCHES_DDR, MOTOR_ON_SWITCH);    //Como entrada
-    set_bit(CTRL_SWITCHES_PORT,MOTOR_ON_SWITCH);    //Ativa o pull-up        
-    clr_bit(CTRL_SWITCHES_DDR, MCC_ON_SWITCH);      //Como entrada
-    set_bit(CTRL_SWITCHES_PORT, MCC_ON_SWITCH);     //Ativa o pull-up
-
-    clr_bit(DMS_DDR, DMS);      //Como entrada
-    set_bit(DMS_PORT, DMS);     //Ativa o pull-up    
-
-    clr_bit(PUMPS_SWITCHES_DDR, PUMP1_ON_SWITCH);      //Como entrada
-    set_bit(PUMPS_SWITCHES_PORT, PUMP1_ON_SWITCH);     //Ativa o pull-up
-    clr_bit(PUMPS_SWITCHES_DDR, PUMP2_ON_SWITCH);      //Como entrada
-    set_bit(PUMPS_SWITCHES_PORT, PUMP2_ON_SWITCH);     //Ativa o pull-up
-    clr_bit(PUMPS_SWITCHES_DDR, PUMP3_ON_SWITCH);      //Como entrada
-    set_bit(PUMPS_SWITCHES_PORT, PUMP3_ON_SWITCH);     //Ativa o pull-up
-    VERBOSE_MSG_INIT(usart_send_string("OK!\n"));
-
-        
     sei();
 }
 
