@@ -98,6 +98,8 @@ inline void can_app_msg_extractors_switch(can_t *msg)
 {
     if(msg->data[CAN_MSG_GENERIC_STATE_SIGNATURE_BYTE] == CAN_SIGNATURE_MDE20_PROA){
 
+        error_flags.no_canbus = can_app_checks_without_mde20_msg = 0;
+
         switch(msg->id){
             
             case CAN_MSG_MDE20_CONTROL_ID:
@@ -119,20 +121,20 @@ inline void can_app_msg_extractors_switch(can_t *msg)
  */
 inline void check_can(void)
 {
-    // If no messages is received from mic17 for
+    // If no messages is received from mde20 
     // CAN_APP_CHECKS_WITHOUT_MIC19_MSG cycles, than it go to a specific error state. 
-    //VERBOSE_MSG_CAN_APP(usart_send_string("checks: "));
-    //VERBOSE_MSG_CAN_APP(usart_send_uint16(can_app_checks_without_mic17_msg));
-// #ifdef CAN_DEPENDENT
-//     if(can_app_checks_without_mic17_msg++ >= CAN_APP_CHECKS_WITHOUT_MIC19_MSG){
-// #ifdef USART_ON
-//         VERBOSE_MSG_CAN_APP(usart_send_string("Error: too many cycles withtou message.\n"));
-// #endif
-//         can_app_checks_without_mic17_msg = 0;
-//         error_flags.no_canbus = 1;
-//         set_state_error();
-//     }
-// #endif
+    VERBOSE_MSG_CAN_APP(usart_send_string("checks: "));
+    VERBOSE_MSG_CAN_APP(usart_send_uint16(can_app_checks_without_mde20_msg));
+#ifdef CAN_DEPENDENT
+     if(can_app_checks_without_mde20_msg++ >= CAN_APP_CHECKS_WITHOUT_MIC19_MSG){
+#ifdef USART_ON
+         VERBOSE_MSG_CAN_APP(usart_send_string("Error: too many cycles withtou message.\n"));
+#endif
+         can_app_checks_without_mde20_msg = 0;
+         error_flags.no_canbus = 1;
+         //set_state_error();
+     }
+#endif
     
     if(can_check_message()){
         can_t msg;
