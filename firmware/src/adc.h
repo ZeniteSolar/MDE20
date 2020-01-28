@@ -30,7 +30,7 @@ typedef enum adc_channels{
     ADC0, ADC1 ,ADC2, ADC3, ADC4, ADC5
 } adc_channels_t;                           //*< the adc_channel type 
 
-#define ADC_LAST_CHANNEL ADC2
+#define ADC_LAST_CHANNEL ADC0
 
 typedef struct{
     uint32_t sum;
@@ -46,7 +46,6 @@ typedef struct adc{
 
 volatile adc_t adc;
 
-uint8_t adc_select_channel(adc_channels_t __ch);
 void adc_init(void);
 
 #endif /* ifndef _ADC_H_ */
