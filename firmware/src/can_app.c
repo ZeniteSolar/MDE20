@@ -68,7 +68,11 @@ inline void can_app_send_pot(void)
     msg.flags.rtr = 0;
 
     msg.data[CAN_MSG_GENERIC_STATE_SIGNATURE_BYTE]  = CAN_SIGNATURE_SELF;
-    msg.data[CAN_MSG_MDE20_CONTROL_POT_BYTE]        = control.pot;
+#ifdef PROA
+    msg.data[CAN_MSG_MDE20_CONTROL_POT_BYTE]        = control.pot_proa;
+#else
+    msg.data[CAN_MSG_MDE20_CONTROL_POT_BYTE]        = control.pot_popa;
+#endif
 
     can_send_message(&msg);
 
@@ -81,7 +85,7 @@ inline void can_app_extractor_mde20_proa_pot(can_t *msg)
     if(msg->data[CAN_MSG_GENERIC_STATE_SIGNATURE_BYTE] == CAN_SIGNATURE_MDE20_PROA){
         can_app_checks_without_mde20_msg = 0;
 
-        control.pot = msg->data[CAN_MSG_MDE20_CONTROL_POT_BYTE];
+        control.pot_proa = msg->data[CAN_MSG_MDE20_CONTROL_POT_BYTE];
     }
 }
 

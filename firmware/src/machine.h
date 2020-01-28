@@ -60,7 +60,8 @@ typedef struct control
 {
     uint8_t dt_A;
     uint8_t dt_B;
-    uint8_t pot;
+    uint8_t pot_proa;
+    uint8_t pot_popa;
 }control_t;
 control_t control;
 
